@@ -40,13 +40,16 @@ LAN 部署优先使用 TLS。初期调试构建若使用明文，必须明确标
 
 发布 CD 只允许手动运行。在 `main` 分支手动 dispatch `Release` 工作流，填写一个已经存在且属于 `main` 历史的 `v` 开头版本标签和标题，并将 `confirm_release` 精确设置为 `true`。工作流会验证该标签属于所选 `main` 历史，然后构建三个 APK，并通过已配置的主机 API 创建 Release 和上传 APK。CI 也会在推送 `v*` 标签时运行。
 
-在每个代码托管平台配置以下仓库变量：
+GitHub 工作流默认使用 `github.api_url`、`github.repository` 和内置的
+`GITHUB_TOKEN`。工作流已声明 `contents: write` 权限，因此通常无需额外配置。
+如果平台环境需要覆盖默认值，可以配置以下仓库变量。Gitea 工作流默认使用
+内置 API 地址、仓库上下文和 job token；如果实例要求显式凭据，也可以配置这些变量和 secret：
 
 - `RELEASE_API_URL`：创建 Release 的 API 基地址，例如 `https://api.github.com` 或 `https://gitea.example.com/api/v1`。
 - `RELEASE_UPLOAD_URL`：上传资产的 API 基地址，例如 `https://uploads.github.com` 或 Gitea API 基地址。
 - `RELEASE_REPOSITORY`：`owner/repository`。
 
-将具有创建 Release 和上传资产权限的凭据配置为 Actions secret `RELEASE_TOKEN`。GitHub 还可以为环境配置 required reviewers，但由于 Gitea 会忽略 `jobs.<job_id>.environment`，显式的手动 dispatch 确认输入仍是跨平台的审批门槛。
+如果平台不允许使用内置 token，将具有创建 Release 和上传资产权限的凭据配置为 Actions secret `RELEASE_TOKEN`。GitHub 还可以为环境配置 required reviewers，但由于 Gitea 会忽略 `jobs.<job_id>.environment`，显式的手动 dispatch 确认输入仍是跨平台的审批门槛。
 
 ## ARMCP APK 包
 

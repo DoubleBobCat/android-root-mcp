@@ -50,7 +50,14 @@ belongs to the selected `main` history, then builds the three APKs and
 publishes a release plus the APK assets through the configured host API. CI
 also runs for `v*` tag pushes.
 
-Configure these repository variables on each host:
+For GitHub, the workflow uses `github.api_url`, `github.repository`, and the
+built-in `GITHUB_TOKEN` by default. The token needs `contents: write`, which is
+declared in the workflow. Optional repository variables can override the API
+endpoints or repository name when required.
+
+For Gitea, the workflow uses the built-in API URL, repository context, and job
+token when available. Configure these repository variables or secrets when the
+instance requires an explicit release credential:
 
 - `RELEASE_API_URL`: release creation API base, such as `https://api.github.com`
   or `https://gitea.example.com/api/v1`.
@@ -59,9 +66,10 @@ Configure these repository variables on each host:
 - `RELEASE_REPOSITORY`: `owner/repository`.
 
 Configure `RELEASE_TOKEN` as an Actions secret with permission to create
-releases and upload assets. GitHub environments may additionally be configured
-with required reviewers, but the explicit dispatch input remains the portable
-approval gate because Gitea ignores `jobs.<job_id>.environment`.
+releases and upload assets when the host does not permit the built-in token.
+GitHub environments may additionally be configured with required reviewers,
+but the explicit dispatch input remains the portable approval gate because
+Gitea ignores `jobs.<job_id>.environment`.
 ## ARMCP release APK packaging
 
 The release package set has three APKs:

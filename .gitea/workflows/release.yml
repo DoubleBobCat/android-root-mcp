@@ -17,6 +17,9 @@ on:
         default: 'false'
         type: string
 
+permissions:
+  releases: write
+
 jobs:
   publish:
     if: ${{ github.ref_name == 'main' }}
@@ -59,10 +62,10 @@ jobs:
 
       - name: Publish release and APK assets
         env:
-          RELEASE_API_URL: ${{ vars.RELEASE_API_URL }}
-          RELEASE_UPLOAD_URL: ${{ vars.RELEASE_UPLOAD_URL }}
-          RELEASE_REPOSITORY: ${{ vars.RELEASE_REPOSITORY }}
-          RELEASE_TOKEN: ${{ secrets.RELEASE_TOKEN }}
+          RELEASE_API_URL: ${{ vars.RELEASE_API_URL || github.api_url }}
+          RELEASE_UPLOAD_URL: ${{ vars.RELEASE_UPLOAD_URL || github.api_url }}
+          RELEASE_REPOSITORY: ${{ vars.RELEASE_REPOSITORY || github.repository }}
+          RELEASE_TOKEN: ${{ secrets.RELEASE_TOKEN || github.token }}
           RELEASE_TAG: ${{ inputs.release_tag }}
           RELEASE_NAME: ${{ inputs.release_name }}
         run: bash script/publish_release.sh
