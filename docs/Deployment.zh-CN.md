@@ -36,9 +36,9 @@ LAN 部署优先使用 TLS。初期调试构建若使用明文，必须明确标
 
 ## CI/CD
 
-`dev` 分支在 `.github/workflows/ci.yml` 和 `.gitea/workflows/ci.yml` 中都配置了自动 CI。推送到 `dev` 或创建目标为 `dev` 的 Pull Request 时，CI 会执行依赖解析、Dart 分析、Flutter 测试和 Debug APK 构建。
+`main` 分支在 `.github/workflows/ci.yml` 和 `.gitea/workflows/ci.yml` 中都配置了自动 CI。推送到 `main` 或创建目标为 `main` 的 Pull Request 时，CI 会执行依赖解析、Dart 分析、Flutter 测试和 Debug APK 构建。
 
-发布 CD 只允许手动运行。在 `dev` 分支手动 dispatch `Release` 工作流，填写版本标签和标题，并将 `confirm_release` 精确设置为 `true`。工作流随后构建三个 APK，并通过已配置的主机 API 创建 Release 和上传 APK；从 `main` 分支不会执行发布。
+发布 CD 只允许手动运行。在 `main` 分支手动 dispatch `Release` 工作流，填写一个已经存在且属于 `main` 历史的 `v` 开头版本标签和标题，并将 `confirm_release` 精确设置为 `true`。工作流会验证该标签属于所选 `main` 历史，然后构建三个 APK，并通过已配置的主机 API 创建 Release 和上传 APK。CI 也会在推送 `v*` 标签时运行。
 
 在每个代码托管平台配置以下仓库变量：
 

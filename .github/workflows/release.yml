@@ -19,19 +19,30 @@ on:
 
 jobs:
   publish:
-    if: ${{ github.ref_name == 'dev' }}
+    if: ${{ github.ref_name == 'main' }}
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Confirm release branch and approval
         env:
           RELEASE_REF: ${{ github.ref_name }}
           CONFIRM_RELEASE: ${{ inputs.confirm_release }}
+          RELEASE_TAG: ${{ inputs.release_tag }}
+          RELEASE_SHA: ${{ github.sha }}
         run: |
-          test "$RELEASE_REF" = "dev"
+          test "$RELEASE_REF" = "main"
           test "$CONFIRM_RELEASE" = "true"
+          case "$RELEASE_TAG" in
+            v*) ;;
+            *) echo "release_tag must start with v" >&2; exit 1 ;;
+          esac
+          git show-ref --verify --quiet "refs/tags/$RELEASE_TAG"
+          tag_sha="$(git rev-list -n 1 "$RELEASE_TAG")"
+          git merge-base --is-ancestor "$tag_sha" "$RELEASE_SHA"
 
       - name: Install Flutter
         uses: subosito/flutter-action@v2

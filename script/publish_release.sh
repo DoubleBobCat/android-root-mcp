@@ -20,7 +20,7 @@ import os
 print(json.dumps({
     "tag_name": os.environ["RELEASE_TAG"],
     "name": os.environ["RELEASE_NAME"],
-    "target_commitish": "dev",
+    "target_commitish": "main",
     "body": "ARMCP Android APK release.",
     "draft": False,
     "prerelease": False,

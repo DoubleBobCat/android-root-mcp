@@ -38,15 +38,17 @@ Prefer TLS for LAN deployment. If an initial debug build uses cleartext, it must
 
 ## CI/CD
 
-The `dev` branch has automatic CI in both `.github/workflows/ci.yml` and
+The `main` branch has automatic CI in both `.github/workflows/ci.yml` and
 `.gitea/workflows/ci.yml`. CI runs dependency resolution, Dart analysis,
 Flutter tests, and a debug APK build on pushes and pull requests targeting
-`dev`.
+`main`.
 
 Release CD is manual only. Dispatch the matching `Release` workflow from the
-`dev` branch, provide the tag and title, and set `confirm_release` to exactly
-`true`. The workflow then builds the three APKs and publishes a release plus
-the APK assets through the configured host API. It does not run from `main`.
+`main` branch, provide an existing `v`-prefixed tag from `main` and its title,
+and set `confirm_release` to exactly `true`. The workflow verifies that the tag
+belongs to the selected `main` history, then builds the three APKs and
+publishes a release plus the APK assets through the configured host API. CI
+also runs for `v*` tag pushes.
 
 Configure these repository variables on each host:
 
