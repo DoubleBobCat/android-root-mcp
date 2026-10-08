@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="armcp_accessibility_label">ARMCP screen reading</string>
+    <string name="armcp_accessibility_description">Read screens from other apps when you enable this service</string>
+    <string name="armcp_mcp_channel">ARMCP MCP server</string>
+</resources>

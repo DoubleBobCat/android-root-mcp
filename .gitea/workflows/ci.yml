@@ -1,0 +1,35 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - dev
+  pull_request:
+    branches:
+      - dev
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.44.0
+          channel: stable
+          cache: false
+
+      - name: Fetch dependencies
+        run: bash script/flutter.sh pub get
+
+      - name: Analyze Dart code
+        run: bash script/flutter.sh analyze
+
+      - name: Run Flutter tests
+        run: bash script/flutter.sh test
+
+      - name: Build debug APK
+        run: bash script/flutter.sh build apk --debug

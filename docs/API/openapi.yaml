@@ -1,0 +1,210 @@
+openapi: 3.1.0
+info:
+  title: ARMCP (Android Root MCP) Control API
+  version: 0.1.0
+  description: Local operator control API. MCP JSON-RPC is served directly at /mcp.
+servers:
+  - url: http://127.0.0.1:8787
+security:
+  - bearerAuth: []
+paths:
+  /v1/status:
+    get:
+      summary: Read server, root, network, and capability status
+      responses:
+        '200':
+          description: Status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Status'
+  /v1/root/check:
+    post:
+      summary: Recheck runtime root availability
+      responses:
+        '200':
+          description: Root status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RootStatus'
+  /v1/root/acquire-attempt:
+    post:
+      summary: Perform a visible user-triggered root acquisition attempt or recheck
+      responses:
+        '200':
+          description: Attempt result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RootStatus'
+  /v1/root/grant-all-permissions:
+    post:
+      summary: Use Root to attempt every permission declared by the ARMCP APK
+      description: Requires a separate explicit operator risk confirmation in the Flutter UI. Android signature, privileged, special-access, and device-policy restrictions may refuse individual permissions.
+      responses:
+        '200':
+          description: Per-permission grant outcomes
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PermissionGrantResult'
+  /v1/capabilities/mode:
+    put:
+      summary: Select Root or non-root capability mode
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [mode]
+              properties:
+                mode: { type: string, enum: [root, non_root] }
+      responses:
+        '200': { description: Effective capability mode }
+  /v1/server:
+    put:
+      summary: Set global MCP state and bind configuration
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ServerUpdate'
+      responses:
+        '200':
+          description: Effective status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Status'
+  /v1/tokens:
+    get:
+      summary: List token metadata without secrets
+      responses:
+        '200':
+          description: Token metadata
+    post:
+      summary: Create a token; the secret is returned once
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenCreate'
+      responses:
+        '201':
+          description: Created token and one-time secret
+  /v1/tokens/{id}:
+    delete:
+      summary: Delete a token and its verifier
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        '204': { description: Deleted }
+  /mcp:
+    get:
+      summary: Open the authenticated MCP Streamable HTTP SSE channel
+      security:
+        - bearerAuth: []
+      responses:
+        '200': { description: SSE stream primed for server messages }
+        '401': { description: Authentication required }
+        '405': { description: SSE not available }
+    post:
+      summary: Direct MCP Streamable HTTP JSON-RPC endpoint
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object }
+      responses:
+        '200': { description: MCP JSON-RPC response or request-scoped event stream }
+        '401': { description: Authentication required }
+        '400': { description: Invalid JSON or JSON-RPC envelope }
+        '415': { description: application/json content type required }
+  /debug/:
+    get:
+      summary: Same-origin static MCP debug console
+      security: []
+      responses:
+        '200': { description: HTML debug page }
+  /debug/locale:
+    post:
+      summary: Set the shared debug and APK UI language
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [languageCode]
+              properties:
+                languageCode: { type: string, enum: [en, zh] }
+      responses:
+        '200': { description: Language persisted }
+        '400': { description: Unsupported language }
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+  schemas:
+    RootStatus:
+      type: object
+      required: [state]
+      properties:
+        state: { type: string, enum: [unknown, available, unavailable, error] }
+        evidence: { type: string }
+        checkedAt: { type: string, format: date-time }
+    PermissionGrantResult:
+      type: object
+      required: [success, state, reason, permissions]
+      properties:
+        success: { type: boolean }
+        state: { type: string, enum: [completed, root_unavailable, error] }
+        reason: { type: string }
+        permissions:
+          type: array
+          items:
+            type: object
+            required: [name, status]
+            properties:
+              name: { type: string }
+              status: { type: string, enum: [granted, already_granted, failed] }
+              reason: { type: string }
+    Status:
+      type: object
+      required: [enabled, root, bindHost, port, operationPermission]
+      properties:
+        enabled: { type: boolean }
+        operationPermission: { type: string, enum: [read_only] }
+        root: { $ref: '#/components/schemas/RootStatus' }
+        bindHost: { type: string }
+        port: { type: integer, minimum: 1, maximum: 65535 }
+        localNetworkPermission: { type: string }
+    ServerUpdate:
+      type: object
+      required: [enabled]
+      properties:
+        enabled: { type: boolean }
+        bindMode: { type: string, enum: [loopback, lan] }
+        port: { type: integer, minimum: 1024, maximum: 65535 }
+    TokenCreate:
+      type: object
+      required: [mode]
+      properties:
+        mode: { type: string, enum: [one_time, reusable, fixed_duration, unlimited] }
+        durationSeconds: { type: integer, minimum: 1 }
+        enabledTools:
+          type: array
+          description: Independent allow-list for this token. Omitted values use the read-only default.
+          uniqueItems: true
+          items: { type: string }

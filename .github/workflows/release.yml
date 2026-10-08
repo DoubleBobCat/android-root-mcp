@@ -1,0 +1,57 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: Tag to create for the release
+        required: true
+        type: string
+      release_name:
+        description: Release title
+        required: true
+        type: string
+      confirm_release:
+        description: Type true to confirm publishing the final release
+        required: true
+        default: 'false'
+        type: string
+
+jobs:
+  publish:
+    if: ${{ github.ref_name == 'dev' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Confirm release branch and approval
+        env:
+          RELEASE_REF: ${{ github.ref_name }}
+          CONFIRM_RELEASE: ${{ inputs.confirm_release }}
+        run: |
+          test "$RELEASE_REF" = "dev"
+          test "$CONFIRM_RELEASE" = "true"
+
+      - name: Install Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.44.0
+          channel: stable
+          cache: false
+
+      - name: Fetch dependencies
+        run: bash script/flutter.sh pub get
+
+      - name: Build release APKs
+        run: bash script/build_android_apks.sh
+
+      - name: Publish release and APK assets
+        env:
+          RELEASE_API_URL: ${{ vars.RELEASE_API_URL }}
+          RELEASE_UPLOAD_URL: ${{ vars.RELEASE_UPLOAD_URL }}
+          RELEASE_REPOSITORY: ${{ vars.RELEASE_REPOSITORY }}
+          RELEASE_TOKEN: ${{ secrets.RELEASE_TOKEN }}
+          RELEASE_TAG: ${{ inputs.release_tag }}
+          RELEASE_NAME: ${{ inputs.release_name }}
+        run: bash script/publish_release.sh
